@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { RotateCw, Volume2, VolumeX, Maximize2, Minimize2 } from "lucide-react";
 
 export default function MalaCounter() {
@@ -21,6 +21,7 @@ export default function MalaCounter() {
       audioRef.current?.pause();
       audioRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Mute/Play
