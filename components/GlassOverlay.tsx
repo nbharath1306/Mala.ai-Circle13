@@ -9,6 +9,7 @@ interface GlassOverlayProps {
     round: number;
     isListening: boolean;
     onToggleListen: () => void;
+    onOpenSettings: () => void;
 }
 
 const MagneticButton = ({ children, onClick, active }: { children: React.ReactNode, onClick: () => void, active?: boolean }) => {
@@ -36,8 +37,8 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
             animate={{ x: position.x, y: position.y }}
             transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
             className={`p-4 rounded-full backdrop-blur-xl border transition-all duration-300 ${active
-                    ? 'bg-neon-gold/20 border-neon-gold/50 shadow-[0_0_20px_rgba(255,215,0,0.3)]'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                ? 'bg-neon-gold/20 border-neon-gold/50 shadow-[0_0_20px_rgba(255,215,0,0.3)]'
+                : 'bg-white/5 border-white/10 hover:bg-white/10'
                 }`}
         >
             {children}
@@ -45,7 +46,7 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
     );
 };
 
-const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, onToggleListen }) => {
+const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, onToggleListen, onOpenSettings }) => {
     return (
         <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-50">
             {/* Top Bar: Global Pulse & Stats */}
@@ -87,7 +88,7 @@ const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, 
 
             {/* Bottom Controls */}
             <footer className="flex justify-center items-center gap-6 pointer-events-auto mb-8">
-                <MagneticButton onClick={() => { }}>
+                <MagneticButton onClick={onOpenSettings}>
                     <Settings size={20} className="text-white/60" />
                 </MagneticButton>
 

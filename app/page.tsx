@@ -1,11 +1,13 @@
 "use client";
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useChantEngine } from '@/hooks/useChantEngine';
+import { useMantraEngine } from '@/hooks/useMantraEngine';
 import AuraBackground from '@/components/AuraBackground';
 import MalaHelix from '@/components/MalaHelix';
 import GlassOverlay from '@/components/GlassOverlay';
+import P2PLink from '@/components/P2PLink';
+import Dashboard from '@/components/Dashboard';
 
 export default function Home() {
   const {
@@ -13,7 +15,10 @@ export default function Home() {
     round,
     isListening,
     toggleMode
-  } = useChantEngine();
+  } = useMantraEngine();
+
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const toggleDashboard = useCallback(() => setIsDashboardOpen(prev => !prev), []);
 
   // Calculate intensity based on some metric (e.g., recent chant speed or mic volume if available)
   // For now, let's map it to progress within the round (0 to 1)
@@ -21,6 +26,9 @@ export default function Home() {
 
   return (
     <main className="relative w-full h-screen bg-[#030303] overflow-hidden">
+
+      {/* Ghost Link (Global Pulse) */}
+      <P2PLink />
 
       {/* 3D Scene Layer */}
       <div className="absolute inset-0 z-0">
@@ -48,7 +56,11 @@ export default function Home() {
         round={round}
         isListening={isListening}
         onToggleListen={toggleMode}
+        onOpenSettings={toggleDashboard}
       />
+
+      {/* Overlay Dashboard */}
+      <Dashboard round={round} isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
 
     </main>
   );
