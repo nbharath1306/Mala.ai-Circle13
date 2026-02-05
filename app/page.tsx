@@ -1,44 +1,54 @@
 "use client";
 
-import MalaScene from "@/components/MalaScene";
-import Dashboard from "@/components/Dashboard";
-import CircleLogo from "@/components/CircleLogo";
-import SacredGeometry from "@/components/SacredGeometry";
-import { useChantEngine } from "@/hooks/useChantEngine";
+import React, { Suspense } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { useChantEngine } from '@/hooks/useChantEngine';
+import AuraBackground from '@/components/AuraBackground';
+import MalaHelix from '@/components/MalaHelix';
+import GlassOverlay from '@/components/GlassOverlay';
 
 export default function Home() {
   const {
     count,
     round,
-    lifetimeChants,
-    mode,
     isListening,
-    increment,
     toggleMode
   } = useChantEngine();
 
+  // Calculate intensity based on some metric (e.g., recent chant speed or mic volume if available)
+  // For now, let's map it to progress within the round (0 to 1)
+  const intensity = (count % 108) / 108;
+
   return (
-    <main className="relative w-full h-screen overflow-hidden bg-deep-black text-foreground selection:bg-neon-gold/30">
+    <main className="relative w-full h-screen bg-[#030303] overflow-hidden">
 
       {/* 3D Scene Layer */}
-      <MalaScene count={count} round={round} />
+      <div className="absolute inset-0 z-0">
+        <Canvas camera={{ position: [0, 0, 15], fov: 45 }}>
 
-      {/* Visual Overlay */}
-      <SacredGeometry count={count} />
+          {/* Environment */}
+          <ambientLight intensity={0.2} />
+          <pointLight position={[10, 10, 10]} intensity={1} color="#FFD700" />
+          <pointLight position={[-10, -5, -5]} intensity={0.5} color="#4B0082" />
+
+          {/* Background Shader */}
+          <AuraBackground intensity={intensity} />
+
+          {/* Main 3D Interactive Element */}
+          <Suspense fallback={null}>
+            <MalaHelix count={count} />
+          </Suspense>
+
+        </Canvas>
+      </div>
 
       {/* UI Overlay Layer */}
-      <Dashboard
+      <GlassOverlay
         count={count}
         round={round}
-        lifetimeChants={lifetimeChants}
-        mode={mode}
         isListening={isListening}
-        onToggleMode={toggleMode}
-        onIncrement={increment}
+        onToggleListen={toggleMode}
       />
-
-      {/* Brand Layer */}
-      <CircleLogo />
 
     </main>
   );
