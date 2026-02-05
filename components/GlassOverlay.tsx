@@ -34,7 +34,7 @@ const OdometerDigit = ({ value }: { value: string }) => {
 const Odometer = ({ value }: { value: number }) => {
     const digits = value.toString().padStart(4, '0').split('');
     return (
-        <div className="flex items-center text-[4rem] tracking-tighter">
+        <div className="flex items-center text-[4rem] sm:text-[6rem] tracking-tighter transition-all duration-300">
             {digits.map((d, i) => (
                 <OdometerDigit key={`${i}-${d}`} value={d} />
             ))}
@@ -51,7 +51,7 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
         const { left, top, width, height } = ref.current!.getBoundingClientRect();
         const x = clientX - (left + width / 2);
         const y = clientY - (top + height / 2);
-        setPosition({ x: x * 0.1, y: y * 0.1 }); // Stiffer magnetic pull
+        setPosition({ x: x * 0.1, y: y * 0.1 });
     };
 
     const handleMouseLeave = () => {
@@ -65,7 +65,7 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             animate={{ x: position.x, y: position.y }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }} // Heavier spring
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className={`p-4 rounded-full backdrop-blur-md border transition-all duration-300 ${active
                     ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.4)]'
                     : 'bg-black/40 text-white/80 border-white/20 hover:bg-white/10'
@@ -78,7 +78,7 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
 
 const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, onToggleListen, onOpenSettings }) => {
 
-    // Auto-hide UI when idle to focus on artifact (Industrial Minimalism)
+    // Auto-hide UI 
     const [idle, setIdle] = useState(false);
     useEffect(() => {
         let timeout: NodeJS.Timeout;
@@ -98,24 +98,23 @@ const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, 
     }, []);
 
     return (
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8 z-50">
-            {/* Top Bar: Precision Indicators */}
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 sm:p-8 z-50">
+            {/* Top Bar */}
             <motion.header
                 animate={{ opacity: idle ? 0 : 1, y: idle ? -20 : 0 }}
                 transition={{ duration: 0.5 }}
                 className="flex justify-between items-start pointer-events-auto"
             >
-                <div className="flex items-center gap-3">
-                    {/* Status Dot */}
-                    <div className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-mono">
-                        {isListening ? 'AUDIO_INPUT_ACTIVE' : 'SYSTEM_READY'}
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-300 ${isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/60 font-mono">
+                        {isListening ? 'AUDIO_ACTIVE' : 'READY'}
                     </span>
                 </div>
 
                 <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">CYCLE</div>
-                    <div className="font-mono text-white text-lg tracking-widest">
+                    <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">CYCLE</div>
+                    <div className="font-mono text-white text-base sm:text-lg tracking-widest">
                         {round.toString().padStart(2, '0')}
                     </div>
                 </div>
@@ -126,7 +125,7 @@ const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, 
                 <Odometer value={count} />
                 <motion.div
                     animate={{ opacity: idle ? 0 : 1 }}
-                    className="text-[10px] uppercase tracking-[0.4em] text-white/40 mt-6"
+                    className="text-[8px] sm:text-[10px] uppercase tracking-[0.4em] text-white/40 mt-4 sm:mt-6"
                 >
                     Repetitions
                 </motion.div>
@@ -136,7 +135,7 @@ const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, 
             <motion.footer
                 animate={{ opacity: idle ? 0 : 1, y: idle ? 20 : 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex justify-center items-center gap-8 pointer-events-auto mb-8"
+                className="flex justify-center items-center gap-6 sm:gap-8 pointer-events-auto mb-4 sm:mb-8"
             >
                 <MagneticButton onClick={onOpenSettings}>
                     <Settings size={18} strokeWidth={1.5} />
@@ -151,7 +150,7 @@ const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, 
                 </MagneticButton>
             </motion.footer>
 
-            {/* Cinematic Grain (Subtle) */}
+            {/* Cinematic Grain */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
         </div>
     );
