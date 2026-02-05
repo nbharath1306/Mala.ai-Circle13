@@ -7,7 +7,7 @@ export class SpatialAudio {
         if (typeof window === 'undefined') return;
 
         if (!this.ctx) {
-            const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+            const AudioContextCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
             if (AudioContextCtor) {
                 this.ctx = new AudioContextCtor();
             }

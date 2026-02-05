@@ -15,9 +15,18 @@ interface IWindow extends Window {
 export type ChantMode = 'tap' | 'voice';
 
 export const useChantEngine = () => {
-    const [count, setCount] = useState(0);
-    const [round, setRound] = useState(0);
-    const [lifetimeChants, setLifetimeChants] = useState(0);
+    const [count, setCount] = useState(() => {
+        if (typeof window !== 'undefined') return parseInt(localStorage.getItem('nitya_count') || '0');
+        return 0;
+    });
+    const [round, setRound] = useState(() => {
+        if (typeof window !== 'undefined') return parseInt(localStorage.getItem('nitya_round') || '0');
+        return 0;
+    });
+    const [lifetimeChants, setLifetimeChants] = useState(() => {
+        if (typeof window !== 'undefined') return parseInt(localStorage.getItem('nitya_lifetime') || '0');
+        return 0;
+    });
     const [mode, setMode] = useState<ChantMode>('tap');
     const [isListening, setIsListening] = useState(false);
 
@@ -25,16 +34,7 @@ export const useChantEngine = () => {
     const [currentWordIndex, setCurrentWordIndex] = useState(0);
     const recognitionRef = useRef<any>(null);
 
-    // Load persistence
-    useEffect(() => {
-        const savedCount = localStorage.getItem('nitya_count');
-        const savedRound = localStorage.getItem('nitya_round');
-        const savedLifetime = localStorage.getItem('nitya_lifetime');
-
-        if (savedCount) setCount(parseInt(savedCount));
-        if (savedRound) setRound(parseInt(savedRound));
-        if (savedLifetime) setLifetimeChants(parseInt(savedLifetime));
-    }, []);
+    // Load persistence (Moved to lazy state initialization)
 
     // Update persistence
     useEffect(() => {
@@ -126,17 +126,13 @@ export const useChantEngine = () => {
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                     finalTranscript += event.results[i][0].transcript;
-                    // When we get a final sentence, try to validate the full mantra
-                    if (MantraValidator.fuzzyMatchFullMantra(finalTranscript)) {
-                        increment();
-                        finalTranscript = ''; // Reset after successful chant
-                    } else {
-                        // Check for failure / partials?
-                        // If transcript gets too long without match, clear it
-                        if (finalTranscript.length > 200) finalTranscript = '';
-                    }
+
+                    // Validate
+                    handleVoiceResult(finalTranscript);
+
+                    if (finalTranscript.length > 200) finalTranscript = '';
                 } else {
-                    interim += event.results[i][0].transcript;
+                    // interim += event.results[i][0].transcript;
                 }
             }
             // Optional: Real-time feedback on interim results could go here

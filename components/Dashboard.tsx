@@ -29,7 +29,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     const [weekData, setWeekData] = useState<number[]>([]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setWeekData(Analytics.getThisWeek());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [count]); // Update when count changes
 
     return (

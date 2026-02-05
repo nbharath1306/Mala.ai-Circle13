@@ -1,8 +1,5 @@
-"use client";
-
 import React, { useRef } from 'react';
 import { motion, PanInfo, useAnimation } from 'framer-motion';
-import { triggerHapticFeedback } from '@/lib/haptics';
 
 interface TouchSurfaceProps {
     onIncrement: () => void;
