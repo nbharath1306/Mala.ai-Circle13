@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  /* Solarized-ish Palette */
+  --background: #FDF6E3; /* Cream */
+  --foreground: #073642; /* Deep Deep Teal */
+  --accent: #B58900; /* Saffron */
+  --muted: #93a1a1;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden; /* App-like feel */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbars for app-like feel */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
