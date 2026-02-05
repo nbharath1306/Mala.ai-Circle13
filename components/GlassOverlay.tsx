@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Mic, Waves } from 'lucide-react';
 
@@ -12,6 +12,36 @@ interface GlassOverlayProps {
     onOpenSettings: () => void;
 }
 
+// Odometer Digit Component
+const OdometerDigit = ({ value }: { value: string }) => {
+    return (
+        <div className="relative h-[1em] w-[0.6em] overflow-hidden inline-block text-center bg-black/50 rounded-sm mx-[1px]">
+            <motion.div
+                key={value}
+                initial={{ y: "100%" }}
+                animate={{ y: "0%" }}
+                exit={{ y: "-100%" }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} // Spring-like snapping
+                className="absolute inset-0 flex items-center justify-center font-mono font-bold text-white leading-none"
+            >
+                {value}
+            </motion.div>
+        </div>
+    );
+};
+
+// Odometer Display
+const Odometer = ({ value }: { value: number }) => {
+    const digits = value.toString().padStart(4, '0').split('');
+    return (
+        <div className="flex items-center text-[4rem] tracking-tighter">
+            {digits.map((d, i) => (
+                <OdometerDigit key={`${i}-${d}`} value={d} />
+            ))}
+        </div>
+    );
+};
+
 const MagneticButton = ({ children, onClick, active }: { children: React.ReactNode, onClick: () => void, active?: boolean }) => {
     const ref = useRef<HTMLButtonElement>(null);
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -21,7 +51,7 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
         const { left, top, width, height } = ref.current!.getBoundingClientRect();
         const x = clientX - (left + width / 2);
         const y = clientY - (top + height / 2);
-        setPosition({ x: x * 0.2, y: y * 0.2 });
+        setPosition({ x: x * 0.1, y: y * 0.1 }); // Stiffer magnetic pull
     };
 
     const handleMouseLeave = () => {
@@ -35,10 +65,10 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             animate={{ x: position.x, y: position.y }}
-            transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
-            className={`p-4 rounded-full backdrop-blur-xl border transition-all duration-300 ${active
-                ? 'bg-neon-gold/20 border-neon-gold/50 shadow-[0_0_20px_rgba(255,215,0,0.3)]'
-                : 'bg-white/5 border-white/10 hover:bg-white/10'
+            transition={{ type: "spring", stiffness: 300, damping: 20 }} // Heavier spring
+            className={`p-4 rounded-full backdrop-blur-md border transition-all duration-300 ${active
+                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.4)]'
+                    : 'bg-black/40 text-white/80 border-white/20 hover:bg-white/10'
                 }`}
         >
             {children}
@@ -47,63 +77,82 @@ const MagneticButton = ({ children, onClick, active }: { children: React.ReactNo
 };
 
 const GlassOverlay: React.FC<GlassOverlayProps> = ({ count, round, isListening, onToggleListen, onOpenSettings }) => {
+
+    // Auto-hide UI when idle to focus on artifact (Industrial Minimalism)
+    const [idle, setIdle] = useState(false);
+    useEffect(() => {
+        let timeout: NodeJS.Timeout;
+        const resetIdle = () => {
+            setIdle(false);
+            clearTimeout(timeout);
+            timeout = setTimeout(() => setIdle(true), 3000);
+        };
+        window.addEventListener('mousemove', resetIdle);
+        window.addEventListener('touchstart', resetIdle);
+        resetIdle();
+        return () => {
+            window.removeEventListener('mousemove', resetIdle);
+            window.removeEventListener('touchstart', resetIdle);
+            clearTimeout(timeout);
+        };
+    }, []);
+
     return (
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-50">
-            {/* Top Bar: Global Pulse & Stats */}
-            <header className="flex justify-between items-start pointer-events-auto">
-                <div className="flex items-center gap-2">
-                    {/* Pulsing Orb */}
-                    <div className="relative w-3 h-3">
-                        <div className="absolute inset-0 bg-neon-gold rounded-full animate-ping opacity-75"></div>
-                        <div className="relative w-3 h-3 bg-neon-gold rounded-full shadow-[0_0_10px_#FFD700]"></div>
-                    </div>
-                    <span className="text-xs uppercase tracking-[0.2em] text-white/40 font-mono">
-                        Global Field Active
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8 z-50">
+            {/* Top Bar: Precision Indicators */}
+            <motion.header
+                animate={{ opacity: idle ? 0 : 1, y: idle ? -20 : 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex justify-between items-start pointer-events-auto"
+            >
+                <div className="flex items-center gap-3">
+                    {/* Status Dot */}
+                    <div className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-mono">
+                        {isListening ? 'AUDIO_INPUT_ACTIVE' : 'SYSTEM_READY'}
                     </span>
                 </div>
 
                 <div className="text-right">
-                    <div className="text-xs uppercase tracking-[0.1em] text-white/40 mb-1">Round</div>
-                    <div className="font-mono text-neon-gold text-xl">{round}</div>
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">CYCLE</div>
+                    <div className="font-mono text-white text-lg tracking-widest">
+                        {round.toString().padStart(2, '0')}
+                    </div>
                 </div>
-            </header>
+            </motion.header>
 
-            {/* Center: Morphing Count */}
+            {/* Center: The Odometer */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                <AnimatePresence mode="popLayout">
-                    <motion.div
-                        key={count}
-                        initial={{ opacity: 0, y: 20, scale: 0.8, filter: 'blur(10px)' }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, y: -20, scale: 1.2, filter: 'blur(10px)' }}
-                        transition={{ duration: 0.3, ease: 'backOut' }}
-                        className="text-[8rem] font-light tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                        style={{ fontFamily: '"Outfit", sans-serif' }} // Assuming variable font available or fallback
-                    >
-                        {count}
-                    </motion.div>
-                </AnimatePresence>
-                <div className="text-sm uppercase tracking-[0.3em] text-neon-gold/50 mt-4">Mantra Count</div>
+                <Odometer value={count} />
+                <motion.div
+                    animate={{ opacity: idle ? 0 : 1 }}
+                    className="text-[10px] uppercase tracking-[0.4em] text-white/40 mt-6"
+                >
+                    Repetitions
+                </motion.div>
             </div>
 
             {/* Bottom Controls */}
-            <footer className="flex justify-center items-center gap-6 pointer-events-auto mb-8">
+            <motion.footer
+                animate={{ opacity: idle ? 0 : 1, y: idle ? 20 : 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex justify-center items-center gap-8 pointer-events-auto mb-8"
+            >
                 <MagneticButton onClick={onOpenSettings}>
-                    <Settings size={20} className="text-white/60" />
+                    <Settings size={18} strokeWidth={1.5} />
                 </MagneticButton>
 
                 <MagneticButton onClick={onToggleListen} active={isListening}>
                     {isListening ? (
-                        <Waves size={24} className="text-neon-gold animate-pulse" />
+                        <Waves size={20} strokeWidth={1.5} />
                     ) : (
-                        <Mic size={24} className="text-white" />
+                        <Mic size={20} strokeWidth={1.5} />
                     )}
                 </MagneticButton>
-            </footer>
+            </motion.footer>
 
-            {/* Vignette & Grain Overlay (CSS Only) */}
-            <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('/noise.png')] mix-blend-overlay"></div>
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-black/80"></div>
+            {/* Cinematic Grain (Subtle) */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
         </div>
     );
 };

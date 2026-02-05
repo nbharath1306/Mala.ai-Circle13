@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useCallback } from 'react';
-import { triggerHapticFeedback } from '@/lib/haptics';
 
 export const useSensoryFeedback = () => {
     const lastTriggerPos = useRef(0);
@@ -14,22 +13,23 @@ export const useSensoryFeedback = () => {
         if (typeof navigator === 'undefined' || !navigator.vibrate) return;
 
         const velAbs = Math.abs(velocity);
-        if (velAbs < 0.01) return; // No movement, no feel
 
-        // Determine spacing based on velocity (simulating texture density)
-        // Low velocity: frequent small ticks (rough wood)
-        // High velocity: infrequent clicks (gears)
+        // Threshold for movement
+        if (velAbs < 0.01) return;
 
-        const tickSpacing = velAbs > 2.0 ? 0.5 : 0.1; // Radians or units
+        // Industrial Dial Density: Defined "Ticks"
+        const tickSpacing = 0.2; // Radians. A distinct click every ~11 degrees.
 
         if (Math.abs(position - lastTriggerPos.current) > tickSpacing) {
-            // Trigger Haptic
-            if (velAbs > 2.0) {
-                // Fast / clicky
-                navigator.vibrate(5);
+
+            // Heavy Industrial Feedback
+            // High velocity: Rapid machine-gun fire, but crisp
+            // Low velocity: Heavy, deliberate clunk
+
+            if (velAbs > 1.0) {
+                navigator.vibrate(5); // Crisp tick
             } else {
-                // Slow / rough
-                navigator.vibrate(2);
+                navigator.vibrate(12); // Slightly heavier clunk for precision
             }
             lastTriggerPos.current = position;
         }
@@ -39,8 +39,8 @@ export const useSensoryFeedback = () => {
         if (typeof navigator === 'undefined' || !navigator.vibrate) return;
 
         if (type === 'completion') {
-            // Massive Heartbeat
-            navigator.vibrate([50, 100, 50, 100, 50]);
+            // The "Hydraulic Press" thud
+            navigator.vibrate([80, 50, 80]); // Deep double thud
         }
     }, []);
 

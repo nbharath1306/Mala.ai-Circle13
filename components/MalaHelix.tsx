@@ -14,6 +14,8 @@ const BEAD_COUNT = 108;
 const MalaHelix: React.FC<MalaHelixProps> = ({ count }) => {
     const meshRef = useRef<THREE.InstancedMesh>(null);
     const groupRef = useRef<THREE.Group>(null);
+
+    // Physics State
     const velocity = useRef(0);
     const rotation = useRef(0);
     const isDragging = useRef(false);
@@ -21,15 +23,24 @@ const MalaHelix: React.FC<MalaHelixProps> = ({ count }) => {
 
     const { updateTexture } = useSensoryFeedback();
 
-    // Dummy object for instanced mesh positioning
     const dummy = useMemo(() => new THREE.Object3D(), []);
 
-    // Material simulation for "Tulsi Wood"
-    const woodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-        color: '#8B4513', // SaddleBrown
-        roughness: 0.9,
-        metalness: 0.1,
-        flatShading: true
+    // Material: Machined Steel / Titanium
+    const titaniumMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+        color: '#B0C4DE', // LightSteelBlue base
+        roughness: 0.15, // Polished
+        metalness: 1.0,  // Full Metal
+        envMapIntensity: 1.0,
+    }), []);
+
+    const guruBeadMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+        color: '#FFFFFF',
+        emissive: '#FFFFFF',
+        emissiveIntensity: 0.2, // Subtle bioluminescence
+        clearcoat: 1,
+        roughness: 0,
+        metalness: 0.5,
+        transmission: 0.5
     }), []);
 
     // Set up the Helix positions
@@ -37,50 +48,52 @@ const MalaHelix: React.FC<MalaHelixProps> = ({ count }) => {
         if (!meshRef.current) return;
 
         for (let i = 0; i < BEAD_COUNT; i++) {
-            // Double Helix Parametric Equation
-            const t = (i / BEAD_COUNT) * Math.PI * 8; // 4 full turns
-            const radius = 2.5;
-            const heightFactor = 0.15;
+            // Precise Mathematical Helix
+            const t = (i / BEAD_COUNT) * Math.PI * 8; // 4 turns
+            const radius = 2.8; // Slightly wider
+            const heightFactor = 0.12; // More compact
 
             const x = Math.cos(t) * radius;
             const z = Math.sin(t) * radius;
             const y = (i - BEAD_COUNT / 2) * heightFactor;
 
             dummy.position.set(x, y, z);
-            dummy.scale.setScalar(0.2); // Bead size
+            dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0); // Random bead rotation
+            dummy.scale.setScalar(0.25); // Slightly larger, heavier beads
             dummy.updateMatrix();
             meshRef.current.setMatrixAt(i, dummy.matrix);
         }
         meshRef.current.instanceMatrix.needsUpdate = true;
     }, [dummy]);
 
-    // Inertia and Rotation Logic
+    // Heavy Inertia Physics
     useFrame((state, delta) => {
         if (!groupRef.current) return;
 
         // Apply Velocity
         rotation.current += velocity.current * delta;
 
-        // Friction (Decay)
+        // Friction (Damping) - Heavy feel
+        // Higher damping = heavier object that stops faster but resists movement
         if (!isDragging.current) {
-            velocity.current *= 0.95; // Damping
+            velocity.current *= 0.92; // Stronger decay than 0.95
         }
 
-        // Auto-rotate slowly if idle
-        if (Math.abs(velocity.current) < 0.1 && !isDragging.current) {
-            rotation.current += 0.05 * delta;
+        // Auto-rotate: Very slow, precise movement if idle
+        if (Math.abs(velocity.current) < 0.05 && !isDragging.current) {
+            // Subtle drift
+            rotation.current += 0.02 * delta;
         }
 
         // Apply Sensory Feedback
-        // We pass velocity and current rotation (position) to simulate texture
         updateTexture(rotation.current, velocity.current);
 
         groupRef.current.rotation.y = rotation.current;
     });
 
-    // Interaction Handlers (Pointer Events)
+    // Interaction Handlers
     const onPointerDown = (e: any) => {
-        e.stopPropagation(); // Prevent orbit controls if present
+        e.stopPropagation();
         isDragging.current = true;
         lastY.current = e.clientY || e.touches?.[0]?.clientY;
         velocity.current = 0;
@@ -92,15 +105,17 @@ const MalaHelix: React.FC<MalaHelixProps> = ({ count }) => {
         const deltaY = clientY - lastY.current;
         lastY.current = clientY;
 
-        // Map drag to velocity
-        velocity.current = deltaY * 2.0;
+        // Map drag to velocity - Lower sensitivity for "Heavy" feel
+        velocity.current += deltaY * 0.05; // Accumulate force rather than direct mapping
+
+        // Clamp max velocity to prevent "spinning top" effect
+        velocity.current = Math.max(Math.min(velocity.current, 5), -5);
     };
 
     const onPointerUp = () => {
         isDragging.current = false;
     };
 
-    // Add global listeners for drag stability (outside canvas)
     useEffect(() => {
         const handleUp = () => { isDragging.current = false; };
         window.addEventListener('mouseup', handleUp);
@@ -119,20 +134,13 @@ const MalaHelix: React.FC<MalaHelixProps> = ({ count }) => {
             onPointerUp={onPointerUp}
             onPointerLeave={onPointerUp}
         >
-            <instancedMesh ref={meshRef} args={[undefined, undefined, BEAD_COUNT]} material={woodMaterial}>
+            <instancedMesh ref={meshRef} args={[undefined, undefined, BEAD_COUNT]} material={titaniumMaterial} castShadow receiveShadow>
                 <sphereGeometry args={[1, 32, 32]} />
             </instancedMesh>
 
-            {/* Guru Bead - Emissive Crystal */}
-            <mesh position={[0, (BEAD_COUNT / 2) * 0.15 + 0.5, 0]}>
-                <dodecahedronGeometry args={[0.4, 0]} />
-                <meshStandardMaterial
-                    color="#FFD700"
-                    emissive="#FFD700"
-                    emissiveIntensity={2}
-                    roughness={0}
-                    metalness={1}
-                />
+            {/* Guru Bead - The Crystal Prism */}
+            <mesh position={[0, (BEAD_COUNT / 2) * 0.12 + 0.6, 0]} material={guruBeadMaterial}>
+                <icosahedronGeometry args={[0.5, 0]} />
             </mesh>
         </group>
     );

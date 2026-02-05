@@ -60,6 +60,7 @@ export default function Home() {
       />
 
       {/* Overlay Dashboard */}
+      {/* Overlay Dashboard (Hidden by default, triggered by settings) */}
       <Dashboard round={round} isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} />
 
     </main>
