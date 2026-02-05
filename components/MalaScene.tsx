@@ -4,6 +4,7 @@ import React, { useRef, useLayoutEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
+import AuraShader from './AuraShader';
 
 const TOTAL_BEADS = 108;
 const RADIUS = 4; // Radius of the mala loop
@@ -86,8 +87,11 @@ interface MalaSceneProps {
 
 const MalaScene: React.FC<MalaSceneProps> = ({ count, round }) => {
     return (
-        <div className="absolute inset-0 z-0 h-screen w-full bg-deep-black">
+        <div className="absolute inset-0 z-0 h-screen w-full">
             <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
+                {/* Background Shader */}
+                <AuraShader count={count} />
+
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} intensity={1} color="#ffd700" />
                 <pointLight position={[-10, -10, -10]} intensity={1} color="#444" />

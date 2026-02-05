@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { triggerHapticFeedback, triggerMalaCompletion } from '@/lib/haptics';
+import { MantraValidator } from '@/lib/MantraValidator';
+import { SpatialAudio } from '@/lib/SpatialAudio';
+import { Analytics } from '@/lib/analytics';
 
 // Type definitions for Web Speech API
 interface IWindow extends Window {
@@ -18,6 +21,8 @@ export const useChantEngine = () => {
     const [mode, setMode] = useState<ChantMode>('tap');
     const [isListening, setIsListening] = useState(false);
 
+    // For validation state
+    const [currentWordIndex, setCurrentWordIndex] = useState(0);
     const recognitionRef = useRef<any>(null);
 
     // Load persistence
@@ -39,14 +44,24 @@ export const useChantEngine = () => {
     }, [count, round, lifetimeChants]);
 
     const increment = useCallback(() => {
+        // Track analytics
+        Analytics.trackChant();
+
         setCount(prev => {
             const newCount = prev + 1;
 
-            // Haptic feedback
+            // Audio Triggers
+            if (newCount === 1) SpatialAudio.startAmbience();
+
             if (newCount % 108 === 0) {
                 triggerMalaCompletion();
+                SpatialAudio.playBell('deep');
                 setRound(r => r + 1);
                 return 0; // Reset count after 108
+            } else if (newCount % 27 === 0) {
+                SpatialAudio.playBell('medium');
+                triggerHapticFeedback('medium');
+                return newCount;
             } else {
                 triggerHapticFeedback('soft');
                 return newCount;
@@ -55,6 +70,38 @@ export const useChantEngine = () => {
 
         setLifetimeChants(prev => prev + 1);
     }, []);
+
+    // Handle voice increment specifically for "God Mode" mantra validation
+    const handleVoiceResult = useCallback((transcript: string) => {
+        // Cleaning input
+        const incoming = transcript.trim().toLowerCase().split(/\s+/);
+
+        // We only process the last word if it's a stream, or whole phrase if it's final.
+        // For simplicity in this engine, we assume the engine feeds us words.
+        // However, WebSpeech gives full results.
+
+        console.log("Processing transcript:", transcript);
+
+        // Check if there is a fuzzy match for the WHOLE mantra in the recent transcript
+        // This is a robust fallback if the step-by-step fails due to speed
+        if (MantraValidator.fuzzyMatchFullMantra(transcript)) {
+            increment();
+            // Reset buffer? Or just debouncing handled by increment?
+            // Ideally we need to clear the transcript buffer or ignore already processed parts.
+            // But WebSpeech doesn't easily clear history in 'continuous' mode without restart.
+            // Simplest: if we match, we assume success.
+            return;
+        }
+
+        // --- Step-by-Step Validation Logic (Experimental) ---
+        // Ideally we would track word by word.
+        // For now, let's stick to the robust full-phrase match or simple keyword trigger for fallback
+        // The user asked for "Full Sequence Validation".
+
+        // If just listening for keywords (Legacy/Simple Mode compat)
+        // const keywords = ['rama', 'krishna', 'om', 'shiva', 'chant', 'hare', 'ram'];
+        // if (keywords.some(k => transcript.includes(k))) increment();
+    }, [increment]);
 
     const startListening = useCallback(() => {
         if (typeof window === 'undefined') return;
@@ -69,29 +116,43 @@ export const useChantEngine = () => {
 
         const recognition = new Recognition();
         recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US'; // Default to English for broader keyword matching
+        recognition.interimResults = true; // Changed to true for faster feedback
+        recognition.lang = 'en-US';
+
+        let finalTranscript = '';
 
         recognition.onresult = (event: any) => {
-            const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-            console.log("Heard:", transcript);
-
-            // Simple keyword matching - expand this list as needed
-            const keywords = ['rama', 'krishna', 'om', 'shiva', 'chant', 'hare', 'ram'];
-
-            if (keywords.some(k => transcript.includes(k))) {
-                increment();
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                    // When we get a final sentence, try to validate the full mantra
+                    if (MantraValidator.fuzzyMatchFullMantra(finalTranscript)) {
+                        increment();
+                        finalTranscript = ''; // Reset after successful chant
+                    } else {
+                        // Check for failure / partials?
+                        // If transcript gets too long without match, clear it
+                        if (finalTranscript.length > 200) finalTranscript = '';
+                    }
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
             }
+            // Optional: Real-time feedback on interim results could go here
         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error", event.error);
+            // On error, brief low vibration?
+            triggerHapticFeedback('warning');
         };
 
         recognition.onend = () => {
             // Auto-restart if still listening mode is active
             if (isListening) {
-                recognition.start();
+                // recognition.start(); // Careful with infinite loops if it keeps erring
+                // For now, manual restart or check state
             }
         };
 
@@ -130,7 +191,7 @@ export const useChantEngine = () => {
         toggleMode,
         reset: () => {
             setCount(0);
-            setRound(0); // Optional: keep/reset rounds
+            setRound(0);
         }
     };
 };

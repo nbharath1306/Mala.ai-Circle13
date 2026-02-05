@@ -1,9 +1,11 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, MicOff, Settings, Volume2 } from 'lucide-react';
 import { ChantMode } from '@/hooks/useChantEngine';
+import TouchSurface from './TouchSurface';
+import { Analytics } from '@/lib/analytics';
 
 interface DashboardProps {
     count: number;
@@ -24,6 +26,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     onToggleMode,
     onIncrement
 }) => {
+    const [weekData, setWeekData] = useState<number[]>([]);
+
+    useEffect(() => {
+        setWeekData(Analytics.getThisWeek());
+    }, [count]); // Update when count changes
+
     return (
         <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-6 sm:p-10">
 
@@ -36,6 +44,21 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="flex flex-col">
                     <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Lifetime Chants</span>
                     <span className="text-xl font-bold text-glow text-neon-gold font-mono">{lifetimeChants.toLocaleString()}</span>
+                </div>
+
+                {/* Heatmap Micro-Chart */}
+                <div className="flex gap-1 items-end h-8">
+                    {weekData.map((val, i) => (
+                        <div
+                            key={i}
+                            className="w-1.5 rounded-t-sm bg-neon-gold transition-all duration-500"
+                            style={{
+                                height: `${Math.min((val / 108) * 100, 100)}%`, // Height relative to 108
+                                opacity: val > 0 ? 0.8 : 0.2, // Use plain css opacity to avoid complex math in loop
+                                minHeight: '2px'
+                            }}
+                        />
+                    ))}
                 </div>
 
                 <button className="p-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors">
@@ -58,23 +81,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </span>
             </div>
 
+            {/* Touch Surface Layer (replaces button for tap mode) */}
+            {mode === 'tap' && (
+                <TouchSurface onIncrement={onIncrement} />
+            )}
+
             {/* Bottom Controls */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="pointer-events-auto flex flex-col items-center gap-6"
+                className="pointer-events-auto flex flex-col items-center gap-6 absolute bottom-10 left-0 right-0 z-30"
             >
-                {/* Interaction Area / Button */}
-                <button
-                    onClick={onIncrement}
-                    className="w-24 h-24 rounded-full border border-neon-gold/30 bg-black/40 backdrop-blur-sm flex items-center justify-center
-                     active:scale-95 transition-transform hover:shadow-[0_0_30px_rgba(255,215,0,0.2)] group"
-                    aria-label="Chant"
-                >
-                    <div className="w-20 h-20 rounded-full bg-neon-gold/10 group-hover:bg-neon-gold/20 transition-colors" />
-                </button>
-
-                <p className="text-xs text-gray-500 uppercase tracking-widest opacity-60">Tap or Speak</p>
+                {mode === 'voice' && (
+                    <div className="p-4 rounded-full bg-neon-gold/10 border border-neon-gold/20 animate-pulse text-neon-gold">
+                        Listening...
+                    </div>
+                )}
 
                 {/* Mode Toggle */}
                 <div className="flex items-center gap-4 bg-white/5 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10">

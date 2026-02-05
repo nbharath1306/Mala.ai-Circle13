@@ -3,6 +3,7 @@
 import MalaScene from "@/components/MalaScene";
 import Dashboard from "@/components/Dashboard";
 import CircleLogo from "@/components/CircleLogo";
+import SacredGeometry from "@/components/SacredGeometry";
 import { useChantEngine } from "@/hooks/useChantEngine";
 
 export default function Home() {
@@ -21,6 +22,9 @@ export default function Home() {
 
       {/* 3D Scene Layer */}
       <MalaScene count={count} round={round} />
+
+      {/* Visual Overlay */}
+      <SacredGeometry count={count} />
 
       {/* UI Overlay Layer */}
       <Dashboard

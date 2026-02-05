@@ -1,0 +1,20 @@
+{
+    "name": "Nitya - Circle13",
+    "short_name": "Nitya",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#050505",
+    "icons": [
+        {
+            "src": "/circle13-icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/circle13-icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
