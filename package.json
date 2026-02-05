@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -12,7 +12,6 @@
     "@eslint/eslintrc": "^3.3.3",
     "@serwist/next": "^9.5.4",
     "@serwist/sw": "^9.5.4",
-    "@supabase/supabase-js": "^2.94.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.31.0",
     "lucide-react": "^0.563.0",

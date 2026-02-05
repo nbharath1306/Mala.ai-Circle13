@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { RotateCw, Volume2, VolumeX, Maximize2, Minimize2 } from "lucide-react";
 
+import { getStats, saveStats, updateStreak } from "@/lib/storage";
+
 export default function MalaCounter() {
   const [count, setCount] = useState(0);
   const [round, setRound] = useState(1);
@@ -12,17 +14,34 @@ export default function MalaCounter() {
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize Audio
+  // Initialize Stats & Audio
   useEffect(() => {
+    // Audio Init
     audioRef.current = new Audio("https://raw.githubusercontent.com/nbharath1306/Mala.ai-Circle13/main/audio/mantra.mp3");
     audioRef.current.loop = true;
     audioRef.current.playbackRate = playbackRate;
+
+    // Stats Init
+    const stats = getStats();
+    // Logic to resume round could go here, for now just updating streak on load
+    const updatedStats = updateStreak(stats);
+    saveStats(updatedStats);
+
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist Count (Debounced-ish by effect)
+  useEffect(() => {
+    if (count > 0) {
+      const stats = getStats();
+      stats.totalBeads += 1;
+      saveStats(stats);
+    }
+  }, [count]);
 
   // Handle Mute/Play
   useEffect(() => {
@@ -72,6 +91,12 @@ export default function MalaCounter() {
       // 108 beads per round
       if (newCount > 108) {
         setRound((r) => r + 1);
+
+        // Update Total Rounds
+        const stats = getStats();
+        stats.totalRounds += 1;
+        saveStats(stats);
+
         return 1;
       }
       return newCount;

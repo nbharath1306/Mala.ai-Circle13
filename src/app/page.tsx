@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { Flame, ArrowRight, Activity, Disc } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { getStats, UserStats } from "@/lib/storage";
 
 export default function Home() {
+  const [stats, setStats] = useState<UserStats | null>(null);
+
+  useEffect(() => {
+    setStats(getStats());
+  }, []);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-8 relative overflow-hidden">
       {/* Background Ambience */}
@@ -19,7 +27,7 @@ export default function Home() {
         <div className="flex gap-4">
           <div className="flex items-center gap-1">
             <Flame size={18} className="text-[var(--accent)]" />
-            <span className="text-xs font-mono">0</span>
+            <span className="text-xs font-mono">{stats?.streak || 0}</span>
           </div>
         </div>
       </header>
@@ -58,16 +66,16 @@ export default function Home() {
         <div className="p-4 rounded-2xl border border-[var(--foreground)]/10 bg-[var(--background)]/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <Activity size={16} />
-            <span className="text-xs font-bold uppercase">Today</span>
+            <span className="text-xs font-bold uppercase">Total Rounds</span>
           </div>
-          <div className="text-2xl font-light">0 <span className="text-xs opacity-50">Rounds</span></div>
+          <div className="text-2xl font-light">{stats?.totalRounds || 0} <span className="text-xs opacity-50">Rounds</span></div>
         </div>
         <div className="p-4 rounded-2xl border border-[var(--foreground)]/10 bg-[var(--background)]/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <Disc size={16} />
             <span className="text-xs font-bold uppercase">Lifetime</span>
           </div>
-          <div className="text-2xl font-light">0 <span className="text-xs opacity-50">Beads</span></div>
+          <div className="text-2xl font-light">{stats?.totalBeads || 0} <span className="text-xs opacity-50">Beads</span></div>
         </div>
       </div>
     </main>
